@@ -2,13 +2,14 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
-var https = require('follow-redirects').https;
+var https = require("follow-redirects").https;
 
 const authRoutes = require("./src/routes/authRoutes");
 const usersRoutes = require("./src/routes/usersRoutes");
 const clientsRoutes = require("./src/routes/clientsRoutes");
 const websitesRoutes = require("./src/routes/websitesRoutes");
 const contactsRoutes = require("./src/routes/contactsRoutes");
+const incidentsRoutes = require("./src/routes/incidentsRoutes");
 
 const corsOptions = require("./src/config/cors");
 
@@ -23,6 +24,7 @@ app.use("/api", usersRoutes);
 app.use("/api", clientsRoutes);
 app.use("/api", websitesRoutes);
 app.use("/api", contactsRoutes);
+app.use("/api", incidentsRoutes);
 
 // UptimeRobot Endpoint
 app.post("/api/uptimerobot", async (req, res) => {
@@ -32,16 +34,20 @@ app.post("/api/uptimerobot", async (req, res) => {
     const response = await axios.post(apiUrl, {
       api_key: process.env.UPTIMEROBOT_API_KEY,
       format: "json",
+      logs: "1",
     });
 
     const monitors = response.data.monitors;
 
-    const websitesUp = monitors.filter(monitor => monitor.status === 2).length;
-    const websitesDown = monitors.filter(monitor => monitor.status !== 2).length;
+    const websitesUp = monitors.filter(
+      (monitor) => monitor.status === 2
+    ).length;
+    const websitesDown = monitors.filter(
+      (monitor) => monitor.status !== 2
+    ).length;
 
-    console.log(`Number of websites up: ${websitesUp}`);
-    console.log(`Number of websites down: ${websitesDown}`);
-
+    //console.log(`Number of websites up: ${websitesUp}`);
+    //console.log(`Number of websites down: ${websitesDown}`);
 
     res.status(200).json(response.data);
   } catch (error) {
@@ -57,25 +63,25 @@ app.get("/api/status", (req, res) => {
 const sendSMS = (to, from, text) => {
   return new Promise((resolve, reject) => {
     const options = {
-      'method': 'POST',
-      'hostname': '2m14wm.api.infobip.com',
-      'path': '/sms/2/text/advanced',
-      'headers': {
-        'Authorization': `App ${process.env.INFOBIP_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+      method: "POST",
+      hostname: "2m14wm.api.infobip.com",
+      path: "/sms/2/text/advanced",
+      headers: {
+        Authorization: `App ${process.env.INFOBIP_API_KEY}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-      'maxRedirects': 20,
+      maxRedirects: 20,
     };
 
     const postData = JSON.stringify({
-      "messages": [
+      messages: [
         {
-          "destinations": [{"to": to}],
-          "from": from,
-          "text": text,
-        }
-      ]
+          destinations: [{ to: to }],
+          from: from,
+          text: text,
+        },
+      ],
     });
 
     const req = https.request(options, (res) => {
@@ -104,7 +110,9 @@ app.post("/api/send-sms", async (req, res) => {
   const { to, from, text } = req.body;
 
   if (!to || !from || !text) {
-    return res.status(400).json({ message: "Missing required parameters: 'to', 'from', or 'text'." });
+    return res.status(400).json({
+      message: "Missing required parameters: 'to', 'from', or 'text'.",
+    });
   }
 
   try {
@@ -115,7 +123,9 @@ app.post("/api/send-sms", async (req, res) => {
     });
   } catch (error) {
     console.error("Error sending SMS:", error.message);
-    res.status(500).json({ message: "Failed to send SMS", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to send SMS", error: error.message });
   }
 });
 

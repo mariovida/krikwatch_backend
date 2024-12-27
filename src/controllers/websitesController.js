@@ -8,26 +8,26 @@ const db = require("../config/database");
 
 // Fetch all websites
 const getWebsites = async (req, res) => {
-    try {
-      const [websites] = await db.query(
-        `
+  try {
+    const [websites] = await db.query(
+      `
         SELECT 
           websites.*, 
           clients.name AS client_name
         FROM websites
         LEFT JOIN clients ON websites.client_id = clients.id
         `
-      );
-  
-      if (websites.length === 0) {
-        return res.status(404).json({ message: "No websites found" });
-      }
-  
-      return res.json({ websites });
-    } catch (error) {
-      console.error("Error fetching websites:", error);
-      return res.status(500).json({ message: "Error fetching websites" });
+    );
+
+    if (websites.length === 0) {
+      return res.status(404).json({ message: "No websites found" });
     }
+
+    return res.json({ websites });
+  } catch (error) {
+    console.error("Error fetching websites:", error);
+    return res.status(500).json({ message: "Error fetching websites" });
+  }
 };
 
 // Fetch a single website by ID
@@ -35,7 +35,9 @@ const getWebsiteById = async (req, res) => {
   const websiteId = req.params.id;
 
   try {
-    const [website] = await db.query("SELECT * FROM websites WHERE id = ?", [websiteId]);
+    const [website] = await db.query("SELECT * FROM websites WHERE id = ?", [
+      websiteId,
+    ]);
 
     if (website.length === 0) {
       return res.status(404).json({ message: `Website not found` });
@@ -51,7 +53,7 @@ const getWebsiteById = async (req, res) => {
 
 // Create new website
 const createWebsite = async (req, res) => {
-  const { name, url, client_id } = req.body;
+  const { name, url, client_id, uptime_id } = req.body;
 
   if (!name) {
     return res.status(400).json({ message: "Name field is required." });
@@ -71,9 +73,9 @@ const createWebsite = async (req, res) => {
 
     const [result] = await db.query(
       `INSERT INTO websites 
-      (name, status, client_id, created_at, website_url) 
-      VALUES (?, 1, ?, NOW(), ?)`,
-      [name, client_id, url]
+      (name, status, client_id, created_at, website_url, uptime_id) 
+      VALUES (?, 1, ?, NOW(), ?, ?)`,
+      [name, client_id, url, uptime_id]
     );
 
     res.status(201).json({
@@ -88,22 +90,26 @@ const createWebsite = async (req, res) => {
 
 const updateWebsite = async (req, res) => {
   const websiteId = req.params.id;
-  const { name, website_url, client_id } = req.body;
+  const { name, website_url, client_id, uptime_id } = req.body;
 
   if (!name || !client_id) {
-    return res.status(400).json({ message: "Website name and client ID are required" });
+    return res
+      .status(400)
+      .json({ message: "Website name and client ID are required" });
   }
 
   try {
-    const [website] = await db.query("SELECT * FROM websites WHERE id = ?", [websiteId]);
+    const [website] = await db.query("SELECT * FROM websites WHERE id = ?", [
+      websiteId,
+    ]);
 
     if (website.length === 0) {
       return res.status(404).json({ message: `Website not found` });
     }
 
     await db.query(
-      "UPDATE websites SET name = ?, client_id = ?, website_url = ? WHERE id = ?",
-      [name, client_id, website_url, websiteId]
+      "UPDATE websites SET name = ?, client_id = ?, website_url = ?, uptime_id = ? WHERE id = ?",
+      [name, client_id, website_url, uptime_id, websiteId]
     );
 
     return res.json({ message: "Website updated successfully" });
@@ -118,7 +124,9 @@ const deleteWebsite = async (req, res) => {
   const websiteId = req.params.id;
 
   try {
-    const [website] = await db.query("SELECT * FROM websites WHERE id = ?", [websiteId]);
+    const [website] = await db.query("SELECT * FROM websites WHERE id = ?", [
+      websiteId,
+    ]);
 
     if (website.length === 0) {
       return res.status(404).json({ message: `Website not found` });
@@ -134,9 +142,9 @@ const deleteWebsite = async (req, res) => {
 };
 
 module.exports = {
-    getWebsites,
-    getWebsiteById,
-    createWebsite,
-    updateWebsite,
-    deleteWebsite,
+  getWebsites,
+  getWebsiteById,
+  createWebsite,
+  updateWebsite,
+  deleteWebsite,
 };

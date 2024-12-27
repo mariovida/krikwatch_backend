@@ -42,25 +42,25 @@ const getUsers = async (req, res) => {
   }
 };
 
-/*
 // Fetch a single user by ID
-const getUserById = async (req, res) => {
-  const userId = req.params.id;
+const getUserId = async (req, res) => {
+  const { email } = req.query;
 
   try {
-    const [user] = await db.query("SELECT id, email, name, role FROM users WHERE id = ?", [userId]);
+    const [user] = await db.query("SELECT id FROM users WHERE email = ?", [
+      email,
+    ]);
 
     if (user.length === 0) {
-      return res.status(404).json({ message: `User with ID ${userId} not found` });
+      return res.status(404).json({ message: `User not found` });
     }
 
-    return res.json({ user: user[0] });
+    return res.json({ user: user[0].id });
   } catch (error) {
     console.error("Error fetching user:", error);
     return res.status(500).json({ message: "Error fetching user" });
   }
 };
-*/
 
 // Create a new user
 const createUser = async (req, res) => {
@@ -183,31 +183,85 @@ const setPassword = async (req, res) => {
 
 // Update user's information
 const updateUser = async (req, res) => {
-  const userId = req.params.id;
   const { first_name, last_name, email } = req.body;
 
-  if (!first_name || !last_name || !email) {
+  if (!first_name || !last_name) {
     return res
       .status(400)
-      .json({ message: "First name, last name, and email are required" });
+      .json({ message: "First name and last name are required" });
   }
 
   try {
-    const [user] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
+    const [user] = await db.query("SELECT * FROM users WHERE email = ?", [
+      email,
+    ]);
 
     if (user.length === 0) {
       return res.status(404).json({ message: `User not found` });
     }
 
     await db.query(
-      "UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?",
-      [first_name, last_name, email, userId]
+      "UPDATE users SET first_name = ?, last_name = ? WHERE email = ?",
+      [first_name, last_name, email]
     );
 
-    return res.json({ message: "User updated successfully" });
+    const [updatedUser] = await db.query(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
+
+    return res.json({
+      message: "User updated successfully",
+      user: {
+        first_name: updatedUser[0].first_name,
+        last_name: updatedUser[0].last_name,
+        email: updatedUser[0].email,
+      },
+    });
   } catch (error) {
     console.error("Error updating user:", error);
     return res.status(500).json({ message: "Error updating user" });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { current_password, new_password, user_id } = req.body;
+
+    if (!current_password || !new_password) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const [user] = await db.query("SELECT password FROM users WHERE id = ?", [
+      user_id,
+    ]);
+    if (user.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const hashedPassword = user[0].password;
+
+    const isMatch = await bcrypt.compare(current_password, hashedPassword);
+    if (!isMatch) {
+      return res
+        .status(201)
+        .json({ message: "Current password is incorrect." });
+    }
+
+    const newHashedPassword = await bcrypt.hash(new_password, 10);
+
+    await db.query("UPDATE users SET password = ? WHERE id = ?", [
+      newHashedPassword,
+      user_id,
+    ]);
+
+    // Respond with success
+    return res.status(200).json({ message: "Password updated successfully." });
+  } catch (error) {
+    console.error("Error changing password:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred. Please try again later." });
   }
 };
 
@@ -265,7 +319,8 @@ const deleteUser = async (req, res) => {
 
 module.exports = {
   getUsers,
-  //getUserById,
+  getUserId,
+  changePassword,
   createUser,
   setPassword,
   updateUser,
