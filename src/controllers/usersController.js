@@ -293,6 +293,42 @@ const toggleUserVerification = async (req, res) => {
   }
 };
 
+const addAlertEmail = async (req, res) => {
+  const { emailAddress, user_id } = req.body;
+
+  if (!emailAddress || !user_id) {
+    return res
+      .status(400)
+      .json({ message: "Email address and user ID are required." });
+  }
+
+  try {
+    const [existingAlertEmail] = await db.query(
+      "SELECT * FROM alert_emails WHERE email = ?",
+      [emailAddress]
+    );
+
+    if (existingAlertEmail.length > 0) {
+      return res
+        .status(200)
+        .json({ message: "This email is already registered for alerts." });
+    }
+
+    const [result] = await db.query(
+      "INSERT INTO alert_emails (email, user) VALUES (?, ?)",
+      [emailAddress, user_id]
+    );
+
+    res.status(200).json({
+      message: "Notification email added successfully.",
+      alertEmail: { id: result.insertId, email: emailAddress, user: user_id },
+    });
+  } catch (error) {
+    console.error("Error adding alert email:", error);
+    res.status(500).json({ message: "Failed to add notification email." });
+  }
+};
+
 // Delete a user
 /*
 const deleteUser = async (req, res) => {
@@ -324,6 +360,7 @@ module.exports = {
   createUser,
   setPassword,
   updateUser,
+  addAlertEmail,
   toggleUserVerification,
   //deleteUser,
 };

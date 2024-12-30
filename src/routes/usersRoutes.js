@@ -5,6 +5,7 @@ const {
   createUser,
   setPassword,
   updateUser,
+  addAlertEmail,
   changePassword,
   toggleUserVerification,
 } = require("../controllers/usersController");
@@ -16,6 +17,7 @@ router.get("/users", authMiddleware, getUsers);
 router.get("/users/user-id", authMiddleware, getUserId);
 router.post("/users", authMiddleware, createUser);
 router.put("/users/update-user", authMiddleware, updateUser);
+router.put("/users/add-alert", authMiddleware, addAlertEmail);
 router.post("/users/set-password", setPassword);
 router.put("/users/change-password", authMiddleware, changePassword);
 router.put(
