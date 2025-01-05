@@ -55,6 +55,7 @@ const createIncident = async (req, res) => {
   const {
     title,
     description,
+    note,
     website_id,
     status,
     user_id,
@@ -83,9 +84,9 @@ const createIncident = async (req, res) => {
   try {
     const [result] = await db.query(
       `INSERT INTO incidents 
-        (title, description, website_id, status, incident_key, created_by, created_at) 
-        VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [title, description, website_id, statusCode, incidentKey, user_id]
+        (title, description, note, website_id, status, incident_key, created_by, created_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [title, description, note, website_id, statusCode, incidentKey, user_id]
     );
 
     res.status(201).json({
