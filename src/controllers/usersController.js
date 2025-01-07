@@ -26,10 +26,14 @@ const getUsers = async (req, res) => {
       return res.status(404).json({ message: "No users found" });
     }
 
-    const formattedUsers = users.map(user => ({
-      ...user,
-      verified: !!user.password,
-    }));
+    const formattedUsers = users.map((user) => {
+      const { password, ...userWithoutPassword } = user;
+
+      return {
+        ...userWithoutPassword,
+        verified: !!user.password,
+      };
+    });
 
     return res.json({ users: formattedUsers });
   } catch (error) {
@@ -177,14 +181,15 @@ const setPassword = async (req, res) => {
   }
 };
 
-
 // Update user's information
 const updateUser = async (req, res) => {
   const userId = req.params.id;
   const { first_name, last_name, email } = req.body;
 
   if (!first_name || !last_name || !email) {
-    return res.status(400).json({ message: "First name, last name, and email are required" });
+    return res
+      .status(400)
+      .json({ message: "First name, last name, and email are required" });
   }
 
   try {
@@ -203,6 +208,34 @@ const updateUser = async (req, res) => {
   } catch (error) {
     console.error("Error updating user:", error);
     return res.status(500).json({ message: "Error updating user" });
+  }
+};
+
+const toggleUserVerification = async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const [user] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
+
+    if (user.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const newVerificationStatus = user[0].is_verified === 1 ? 0 : 1;
+
+    await db.query("UPDATE users SET is_verified = ? WHERE id = ?", [
+      newVerificationStatus,
+      userId,
+    ]);
+
+    return res.json({
+      message: `User verification status toggled`,
+    });
+  } catch (error) {
+    console.error("Error toggling user verification:", error);
+    return res
+      .status(500)
+      .json({ message: "Error toggling user verification" });
   }
 };
 
@@ -236,5 +269,6 @@ module.exports = {
   createUser,
   setPassword,
   updateUser,
+  toggleUserVerification,
   //deleteUser,
 };

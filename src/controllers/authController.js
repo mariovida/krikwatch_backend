@@ -40,8 +40,11 @@ const loginController = async (req, res) => {
     }
 
     const user = users[0];
-    if (user.is_verified !== 1) {
+    if (user.is_verified !== 1 && (user.password === "" || !user.password)) {
       return res.status(200).json({ error: "Account not verified" });
+    }
+    if (user.is_verified !== 1) {
+      return res.status(200).json({ error: "Account disabled" });
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
