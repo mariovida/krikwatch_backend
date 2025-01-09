@@ -56,7 +56,8 @@ const getIncidentById = async (req, res) => {
 
   try {
     const [incident] = await db.query(
-      `SELECT 
+      `SELECT
+        i.id,
         i.incident_key, 
         i.title, 
         i.description,
@@ -100,7 +101,17 @@ const getIncidentById = async (req, res) => {
       [incidentData.website_id]
     );
 
-    return res.json({ incident: incidentData, contacts });
+    const [messages] = await db.query(
+      `SELECT 
+        m.sent_at, 
+        m.sent_to
+      FROM messages m
+      LEFT JOIN incidents i ON m.incident_id = i.id
+      WHERE i.incident_key = ?`,
+      [incidentId]
+    );
+
+    return res.json({ incident: incidentData, contacts, messages });
   } catch (error) {
     console.error("Error fetching incident:", error);
     return res.status(500).json({ message: "Error fetching incident" });
