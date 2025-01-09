@@ -108,7 +108,7 @@ const updateContact = async (req, res) => {
 };
 
 const sendEmail = async (req, res) => {
-  const { email, message } = req.body;
+  const { email, message, incidentId } = req.body;
   const krikemDefaultMail = process.env.KRIKWATCH_DEFAULT_MAIL;
 
   if (!email || !message) {
@@ -139,7 +139,16 @@ const sendEmail = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    return res.status(200).json({ message: "Email sent successfully!" });
+    const [result] = await db.query(
+      `INSERT INTO messages (message, sent_at, sent_to, incident_id) VALUES (?, NOW(), ?, ?)`,
+      [message, email, incidentId]
+    );
+
+    if (result.affectedRows > 0) {
+      return res.status(200).json({ message: "Email sent successfully!" });
+    } else {
+      return res.status(500).json({ message: "Email sent but failed to log." });
+    }
   } catch (error) {
     console.error("Error sending email:", error);
     return res.status(500).json({ message: "Failed to send email." });
