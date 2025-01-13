@@ -6,6 +6,7 @@ const authRoutes = require("./src/routes/authRoutes");
 const usersRoutes = require("./src/routes/usersRoutes");
 const clientsRoutes = require("./src/routes/clientsRoutes");
 const websitesRoutes = require("./src/routes/websitesRoutes");
+const contactsRoutes = require("./src/routes/contactsRoutes");
 
 const corsOptions = require("./src/config/cors");
 
@@ -19,6 +20,7 @@ app.use("/api", authRoutes);
 app.use("/api", usersRoutes);
 app.use("/api", clientsRoutes);
 app.use("/api", websitesRoutes);
+app.use("/api", contactsRoutes);
 
 app.get("/api/status", (req, res) => {
   res.status(200).json({ message: "Backend is running" });
