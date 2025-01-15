@@ -2,9 +2,28 @@ const mysql = require("mysql2/promise");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const db = require("../config/database");
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Define where the uploaded files will be stored
+    cb(null, "uploads");
+  },
+  filename: function (req, file, cb) {
+    // Generate a unique filename using the current timestamp and the file's extension
+    cb(null, "client-logo-" + Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage }).single("logo");
+
+// Function to upload a logo for a client
+const uploadClientLogo = async (req, res) => {
+  const clientId = req.params.id;
+};
 
 // Fetch all clients
 const getClients = async (req, res) => {
@@ -78,16 +97,18 @@ const updateClient = async (req, res) => {
   }
 
   try {
-    const [client] = await db.query("SELECT * FROM clients WHERE id = ?", [clientId]);
+    const [client] = await db.query("SELECT * FROM clients WHERE id = ?", [
+      clientId,
+    ]);
 
     if (client.length === 0) {
       return res.status(404).json({ message: `Client not found` });
     }
 
-    await db.query(
-      "UPDATE clients SET name = ? WHERE id = ?",
-      [name, clientId]
-    );
+    await db.query("UPDATE clients SET name = ? WHERE id = ?", [
+      name,
+      clientId,
+    ]);
 
     return res.json({ message: "Client updated successfully" });
   } catch (error) {
@@ -97,7 +118,8 @@ const updateClient = async (req, res) => {
 };
 
 module.exports = {
-    getClients,
-    createClient,
-    updateClient,
+  uploadClientLogo,
+  getClients,
+  createClient,
+  updateClient,
 };
