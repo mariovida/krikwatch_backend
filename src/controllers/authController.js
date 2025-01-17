@@ -1,6 +1,19 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const fs = require("fs");
+const path = require("path");
 const db = require("../config/database");
+
+const generateRandomToken = () => {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let token = "";
+  for (let i = 0; i < 32; i++) {
+    token += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return token;
+};
 
 const refreshTokenController = async (req, res) => {
   const { refreshToken } = req.body;
@@ -79,4 +92,85 @@ const loginController = async (req, res) => {
   }
 };
 
-module.exports = { refreshTokenController, loginController };
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  const krikemDefaultMail = process.env.KRIKWATCH_DEFAULT_MAIL;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  try {
+    const [user] = await db.query("SELECT * FROM users WHERE email = ?", [
+      email,
+    ]);
+
+    if (user.length === 0) {
+      return res.status(200).json({ message: `Email not found` });
+    }
+
+    const passwordRequestToken = generateRandomToken(24);
+
+    const tokenQuery = `
+      UPDATE users
+      SET password_request_token = ?
+      WHERE id = ?
+    `;
+    await db.query(tokenQuery, [passwordRequestToken, user[0].id]);
+
+    const emailTemplatePath = path.join(
+      __dirname,
+      "../templates/resetPassword.html"
+    );
+    const emailTemplate = fs.readFileSync(emailTemplatePath, "utf-8");
+
+    const environment = process.env.ENVIRONMENT || "development";
+    let appUrl = process.env.TEST_FRONTEND_URL;
+    if (environment === "production") {
+      appUrl = process.env.FRONTEND_URL;
+    }
+
+    const resetLink = `${appUrl}/password-create?t=${passwordRequestToken}`;
+    const populatedTemplate = emailTemplate.replace(
+      /{{resetLink}}/g,
+      resetLink
+    );
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    const mailOptions = {
+      from: `"KrikWatch" <${krikemDefaultMail}>`,
+      to: email,
+      subject: "Password reset link",
+      html: populatedTemplate,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error sending email:", error);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+
+      console.log("Email sent: " + info.response);
+      res.status(200).json({
+        message: "Password reset email sent successfully.",
+      });
+    });
+  } catch (error) {
+    console.error("Error in forgotPassword:", error);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
+module.exports = { refreshTokenController, loginController, forgotPassword };
