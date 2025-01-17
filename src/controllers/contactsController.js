@@ -28,7 +28,7 @@ const getContacts = async (req, res) => {
 
     if (contacts.length === 0) {
       return res
-        .status(404)
+        .status(200)
         .json({ message: "No contacts found for this website" });
     }
 
