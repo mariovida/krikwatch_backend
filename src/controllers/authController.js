@@ -130,7 +130,7 @@ const forgotPassword = async (req, res) => {
       appUrl = process.env.FRONTEND_URL;
     }
 
-    const resetLink = `${appUrl}/password-create?t=${passwordRequestToken}`;
+    const resetLink = `${appUrl}/password-reset?token=${passwordRequestToken}`;
     const populatedTemplate = emailTemplate.replace(
       /{{resetLink}}/g,
       resetLink

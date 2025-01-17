@@ -164,7 +164,7 @@ const setPassword = async (req, res) => {
     );
 
     if (user.length === 0) {
-      return res.status(200).json({ message: "Invalid or expired token" });
+      return res.status(201).json({ message: "Invalid token" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
