@@ -1,4 +1,4 @@
-const allowedOrigins = ["http://localhost:5173", "https://7bb8-213-186-4-40.ngrok-free.app"];
+const allowedOrigins = ["http://localhost:5173", "https://watch.kriktest.com"];
 
 const corsOptions = {
   origin: function (origin, callback) {
