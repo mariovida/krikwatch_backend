@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const axios = require("axios");
 
 const authRoutes = require("./src/routes/authRoutes");
 const usersRoutes = require("./src/routes/usersRoutes");
@@ -21,6 +22,23 @@ app.use("/api", usersRoutes);
 app.use("/api", clientsRoutes);
 app.use("/api", websitesRoutes);
 app.use("/api", contactsRoutes);
+
+// UptimeRobot Endpoint
+app.post("/api/uptimerobot", async (req, res) => {
+  try {
+    const apiUrl = "https://api.uptimerobot.com/v2/getMonitors";
+
+    const response = await axios.post(apiUrl, {
+      api_key: process.env.UPTIMEROBOT_API_KEY,
+      format: "json",
+    });
+
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error("Error fetching UptimeRobot data:", error.message);
+    res.status(500).json({ message: "Failed to fetch data from UptimeRobot" });
+  }
+});
 
 app.get("/api/status", (req, res) => {
   res.status(200).json({ message: "Backend is running" });
