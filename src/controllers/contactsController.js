@@ -108,10 +108,10 @@ const updateContact = async (req, res) => {
 };
 
 const sendEmail = async (req, res) => {
-  const { email, message, incidentId } = req.body;
+  const { contactId, email, message, incidentId } = req.body;
   const krikemDefaultMail = process.env.KRIKWATCH_DEFAULT_MAIL;
 
-  if (!email || !message) {
+  if (!email || !contactId || !message) {
     return res.status(400).json({ message: "Email and message are required." });
   }
 
@@ -140,8 +140,8 @@ const sendEmail = async (req, res) => {
     await transporter.sendMail(mailOptions);
 
     const [result] = await db.query(
-      `INSERT INTO messages (message, sent_at, sent_to, incident_id) VALUES (?, NOW(), ?, ?)`,
-      [message, email, incidentId]
+      `INSERT INTO messages (message, sent_at, sent_to, contact_id, incident_id) VALUES (?, NOW(), ?, ?, ?)`,
+      [message, email, contactId, incidentId]
     );
 
     if (result.affectedRows > 0) {
