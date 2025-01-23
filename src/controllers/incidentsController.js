@@ -105,11 +105,14 @@ const getIncidentById = async (req, res) => {
       `SELECT
         m.id,
         m.sent_at, 
-        m.sent_to
+        m.sent_to,
+        wc.first_name,
+        wc.last_name
       FROM messages m
       LEFT JOIN incidents i ON m.incident_id = i.id
+      LEFT JOIN website_contacts wc ON m.contact_id = wc.id
       WHERE i.incident_key = ?
-      ORDER BY m.sent_at DESC`,
+      ORDER BY m.sent_at DESC;`,
       [incidentId]
     );
 
