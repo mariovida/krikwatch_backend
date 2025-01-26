@@ -117,9 +117,32 @@ const updateClient = async (req, res) => {
   }
 };
 
+// Delete client
+const deleteClient = async (req, res) => {
+  const clientId = req.params.id;
+
+  try {
+    const [client] = await db.query("SELECT * FROM clients WHERE id = ?", [
+      clientId,
+    ]);
+
+    if (client.length === 0) {
+      return res.status(404).json({ message: `Client not found` });
+    }
+
+    await db.query("DELETE FROM clients WHERE id = ?", [clientId]);
+
+    return res.status(200).json({ message: "Client deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting client:", error);
+    return res.status(500).json({ message: "Error deleting client" });
+  }
+};
+
 module.exports = {
   uploadClientLogo,
   getClients,
   createClient,
   updateClient,
+  deleteClient,
 };

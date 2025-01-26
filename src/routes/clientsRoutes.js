@@ -4,6 +4,7 @@ const {
   createClient,
   updateClient,
   uploadClientLogo,
+  deleteClient,
 } = require("../controllers/clientsController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 
@@ -13,5 +14,6 @@ router.get("/clients", authMiddleware, getClients);
 router.post("/clients", authMiddleware, createClient);
 router.put("/clients/:id", authMiddleware, updateClient);
 router.post("/clients/:id/upload-logo", uploadClientLogo);
+router.delete("/clients/delete-client/:id", authMiddleware, deleteClient);
 
 module.exports = router;
