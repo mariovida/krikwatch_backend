@@ -43,11 +43,31 @@ const getWebsiteById = async (req, res) => {
       return res.status(404).json({ message: `Website not found` });
     }
 
-    return res.json({ website: website[0] });
+    const [incidents] = await db.query(
+      `SELECT 
+        i.incident_key, 
+        i.title, 
+        i.description, 
+        i.status, 
+        i.created_at, 
+        i.updated_at,
+        u.first_name AS created_by_first_name,
+        u.last_name AS created_by_last_name
+      FROM incidents i
+      LEFT JOIN users u ON i.created_by = u.id
+      WHERE i.website_id = ?`,
+      [websiteId]
+    );
+
+    const formattedIncidents = incidents.map(incident => ({
+      ...incident,
+      created_by: `${incident.created_by_first_name} ${incident.created_by_last_name}`,
+    }));
+
+    return res.json({ website: website[0], incidents: formattedIncidents });
   } catch (error) {
-    // Handle errors
-    console.error("Error fetching website:", error);
-    return res.status(500).json({ message: "Error fetching website" });
+    console.error("Error fetching website and incidents:", error);
+    return res.status(500).json({ message: "Error fetching website and incidents" });
   }
 };
 

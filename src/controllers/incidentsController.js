@@ -50,6 +50,55 @@ const getIncidents = async (req, res) => {
   }
 };
 
+// Fetch a single incident by ID
+const getIncidentById = async (req, res) => {
+  const incidentId = req.params.id;
+
+  try {
+    const [incident] = await db.query(
+      `SELECT 
+        i.incident_key, 
+        i.title, 
+        i.description,
+        i.note,
+        i.status, 
+        i.created_at, 
+        i.updated_at,
+        i.created_by,
+        i.website_id,
+        u.first_name, 
+        u.last_name,
+        w.name AS websiteName
+      FROM incidents i
+      LEFT JOIN users u ON i.created_by = u.id
+      LEFT JOIN websites w ON i.website_id = w.id
+      WHERE i.incident_key = ?`,
+      [incidentId]
+    );
+
+    if (incident.length === 0) {
+      return res.status(404).json({ message: `Incident not found` });
+    }
+
+    const incidentData = {
+      ...incident[0],
+      created_by: incident[0].first_name && incident[0].last_name 
+        ? `${incident[0].first_name} ${incident[0].last_name}` 
+        : "Unknown User",
+      website_name: incident[0].websiteName || "Unknown Website",
+    };
+
+    delete incidentData.first_name;
+    delete incidentData.last_name;
+    delete incidentData.websiteName;
+
+    return res.json({ incident: incidentData });
+  } catch (error) {
+    console.error("Error fetching incident:", error);
+    return res.status(500).json({ message: "Error fetching incident" });
+  }
+};
+
 // Create new incident
 const createIncident = async (req, res) => {
   const {
@@ -101,5 +150,6 @@ const createIncident = async (req, res) => {
 
 module.exports = {
   getIncidents,
+  getIncidentById,
   createIncident,
 };
