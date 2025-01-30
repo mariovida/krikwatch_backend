@@ -82,17 +82,23 @@ const getIncidentById = async (req, res) => {
 
     const incidentData = {
       ...incident[0],
-      created_by: incident[0].first_name && incident[0].last_name 
-        ? `${incident[0].first_name} ${incident[0].last_name}` 
-        : "Unknown User",
-      website_name: incident[0].websiteName || "Unknown Website",
+      created_by:
+        incident[0].first_name && incident[0].last_name
+          ? `${incident[0].first_name} ${incident[0].last_name}`
+          : "Unknown",
+      website_name: incident[0].websiteName || "Unknown",
     };
 
     delete incidentData.first_name;
     delete incidentData.last_name;
     delete incidentData.websiteName;
 
-    return res.json({ incident: incidentData });
+    const [contacts] = await db.query(
+      `SELECT id, first_name, last_name, email FROM website_contacts WHERE website_id = ?`,
+      [incidentData.website_id]
+    );
+
+    return res.json({ incident: incidentData, contacts });
   } catch (error) {
     console.error("Error fetching incident:", error);
     return res.status(500).json({ message: "Error fetching incident" });
