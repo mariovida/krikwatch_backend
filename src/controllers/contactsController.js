@@ -107,8 +107,48 @@ const updateContact = async (req, res) => {
   }
 };
 
+const sendEmail = async (req, res) => {
+  const { email, message } = req.body;
+  const krikemDefaultMail = process.env.KRIKWATCH_DEFAULT_MAIL;
+
+  if (!email || !message) {
+    return res.status(400).json({ message: "Email and message are required." });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    const mailOptions = {
+      from: `"Krikstudio" <${krikemDefaultMail}>`,
+      to: email,
+      subject: "Obavijest o nedostupnosti web usluge",
+      text: message,
+      html: `<p>${message.replace(/\n/g, "<br>")}</p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({ message: "Email sent successfully!" });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return res.status(500).json({ message: "Failed to send email." });
+  }
+};
+
 module.exports = {
   getContacts,
   createContact,
   updateContact,
+  sendEmail,
 };
