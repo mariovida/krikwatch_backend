@@ -108,7 +108,8 @@ const getIncidentById = async (req, res) => {
         m.sent_to
       FROM messages m
       LEFT JOIN incidents i ON m.incident_id = i.id
-      WHERE i.incident_key = ?`,
+      WHERE i.incident_key = ?
+      ORDER BY m.sent_at DESC`,
       [incidentId]
     );
 
@@ -216,9 +217,35 @@ const createIncident = async (req, res) => {
   }
 };
 
+// Update incident status
+const updateIncidentStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const query =
+      status === 3
+        ? "UPDATE incidents SET status = ?, resolved_at = NOW() WHERE id = ?"
+        : "UPDATE incidents SET status = ? WHERE id = ?";
+
+    const params = status === 3 ? [status, id] : [status, id];
+    const [result] = await db.query(query, params);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Incident not found" });
+    }
+
+    return res.json({ message: "Incident status updated successfully" });
+  } catch (error) {
+    console.error("Error updating incident status:", error);
+    return res.status(500).json({ message: "Error updating incident status" });
+  }
+};
+
 module.exports = {
   getIncidents,
   getIncidentById,
   getMessages,
   createIncident,
+  updateIncidentStatus,
 };
