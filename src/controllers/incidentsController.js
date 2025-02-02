@@ -66,6 +66,8 @@ const getIncidentById = async (req, res) => {
         i.updated_at,
         i.created_by,
         i.website_id,
+        i.incident_start,
+        i.incident_end,
         u.first_name, 
         u.last_name,
         w.name AS websiteName
