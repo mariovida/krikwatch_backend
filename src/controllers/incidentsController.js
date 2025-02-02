@@ -40,7 +40,7 @@ const getIncidents = async (req, res) => {
     `);
 
     if (incidents.length === 0) {
-      return res.status(404).json({ message: "No incidents found" });
+      return res.status(200).json({ incidents: [] });
     }
 
     return res.json({ incidents });
