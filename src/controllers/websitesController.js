@@ -59,7 +59,7 @@ const getWebsiteById = async (req, res) => {
       [websiteId]
     );
 
-    const formattedIncidents = incidents.map(incident => ({
+    const formattedIncidents = incidents.map((incident) => ({
       ...incident,
       created_by: `${incident.created_by_first_name} ${incident.created_by_last_name}`,
     }));
@@ -67,13 +67,16 @@ const getWebsiteById = async (req, res) => {
     return res.json({ website: website[0], incidents: formattedIncidents });
   } catch (error) {
     console.error("Error fetching website and incidents:", error);
-    return res.status(500).json({ message: "Error fetching website and incidents" });
+    return res
+      .status(500)
+      .json({ message: "Error fetching website and incidents" });
   }
 };
 
 // Create new website
 const createWebsite = async (req, res) => {
-  const { name, url, client_id, uptime_id } = req.body;
+  const { name, url, client_id, uptime_id, hosting_url, hosting_info } =
+    req.body;
 
   if (!name) {
     return res.status(400).json({ message: "Name field is required." });
@@ -93,9 +96,9 @@ const createWebsite = async (req, res) => {
 
     const [result] = await db.query(
       `INSERT INTO websites 
-      (name, status, client_id, created_at, website_url, uptime_id) 
-      VALUES (?, 1, ?, NOW(), ?, ?)`,
-      [name, client_id, url, uptime_id]
+      (name, status, client_id, created_at, website_url, uptime_id, hosting_url, hosting_info) 
+      VALUES (?, 1, ?, NOW(), ?, ?, ?, ?)`,
+      [name, client_id, url, uptime_id, hosting_url, hosting_info]
     );
 
     res.status(201).json({
@@ -110,7 +113,8 @@ const createWebsite = async (req, res) => {
 
 const updateWebsite = async (req, res) => {
   const websiteId = req.params.id;
-  const { name, website_url, client_id, uptime_id } = req.body;
+  const { name, website_url, client_id, uptime_id, hosting_url, hosting_info } =
+    req.body;
 
   if (!name || !client_id) {
     return res
@@ -128,8 +132,16 @@ const updateWebsite = async (req, res) => {
     }
 
     await db.query(
-      "UPDATE websites SET name = ?, client_id = ?, website_url = ?, uptime_id = ? WHERE id = ?",
-      [name, client_id, website_url, uptime_id, websiteId]
+      "UPDATE websites SET name = ?, client_id = ?, website_url = ?, uptime_id = ?, hosting_url = ?, hosting_info = ? WHERE id = ?",
+      [
+        name,
+        client_id,
+        website_url,
+        uptime_id,
+        hosting_url,
+        hosting_info,
+        websiteId,
+      ]
     );
 
     return res.json({ message: "Website updated successfully" });
