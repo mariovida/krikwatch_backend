@@ -102,7 +102,8 @@ const getIncidentById = async (req, res) => {
     );
 
     const [messages] = await db.query(
-      `SELECT 
+      `SELECT
+        m.id,
         m.sent_at, 
         m.sent_to
       FROM messages m
@@ -132,6 +133,26 @@ const formatDate = (date) => {
       .padStart(2, "0")}`;
   }
   return null;
+};
+
+// Get messages
+const getMessages = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [message] = await db.query(`SELECT * FROM messages WHERE id = ?`, [
+      id,
+    ]);
+
+    if (message.length === 0) {
+      return res.status(404).json({ message: `Message not found` });
+    }
+
+    return res.json({ message: message[0] });
+  } catch (error) {
+    console.error("Error fetching message:", error);
+    return res.status(500).json({ message: "Error fetching message" });
+  }
 };
 
 // Create new incident
@@ -198,5 +219,6 @@ const createIncident = async (req, res) => {
 module.exports = {
   getIncidents,
   getIncidentById,
+  getMessages,
   createIncident,
 };
