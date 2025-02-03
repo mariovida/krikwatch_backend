@@ -5,6 +5,7 @@ const {
   createUser,
   setPassword,
   updateUser,
+  getAlertEmailsByUserId,
   addAlertEmail,
   changePassword,
   toggleUserVerification,
@@ -18,6 +19,7 @@ router.get("/users/user-id", authMiddleware, getUserId);
 router.post("/users", authMiddleware, createUser);
 router.put("/users/update-user", authMiddleware, updateUser);
 router.put("/users/add-alert", authMiddleware, addAlertEmail);
+router.get("/users/get-alerts/:id", authMiddleware, getAlertEmailsByUserId);
 router.post("/users/set-password", setPassword);
 router.put("/users/change-password", authMiddleware, changePassword);
 router.put(

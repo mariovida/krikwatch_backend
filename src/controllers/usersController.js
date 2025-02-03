@@ -329,6 +329,36 @@ const addAlertEmail = async (req, res) => {
   }
 };
 
+const getAlertEmailsByUserId = async (req, res) => {
+  const user_id = req.params.id;
+
+  if (!user_id) {
+    return res.status(400).json({ message: "User ID is required." });
+  }
+
+  try {
+    // Query the database to fetch alert emails for the given user_id
+    const [alertEmails] = await db.query(
+      "SELECT id, email FROM alert_emails WHERE user = ?",
+      [user_id]
+    );
+
+    if (alertEmails.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No alert emails found for this user." });
+    }
+
+    res.status(200).json({
+      message: "Alert emails fetched successfully.",
+      alertEmails: alertEmails,
+    });
+  } catch (error) {
+    console.error("Error fetching alert emails:", error);
+    res.status(500).json({ message: "Failed to fetch alert emails." });
+  }
+};
+
 // Delete a user
 /*
 const deleteUser = async (req, res) => {
@@ -362,5 +392,6 @@ module.exports = {
   updateUser,
   addAlertEmail,
   toggleUserVerification,
+  getAlertEmailsByUserId,
   //deleteUser,
 };
