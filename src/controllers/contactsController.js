@@ -132,6 +132,7 @@ const sendEmail = async (req, res) => {
     const mailOptions = {
       from: `"Krikstudio" <${krikemDefaultMail}>`,
       to: email,
+      //replyTo: "mario@krikstudio.com",
       subject: "Obavijest o nedostupnosti web usluge",
       text: message,
       html: `<p>${message.replace(/\n/g, "<br>")}</p>`,
