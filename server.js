@@ -11,6 +11,7 @@ const websitesRoutes = require("./src/routes/websitesRoutes");
 const contactsRoutes = require("./src/routes/contactsRoutes");
 const incidentsRoutes = require("./src/routes/incidentsRoutes");
 const calendarRoutes = require("./src/routes/calendarRoutes");
+const templatesRoutes = require("./src/routes/templatesRoutes");
 
 const corsOptions = require("./src/config/cors");
 
@@ -27,6 +28,7 @@ app.use("/api", websitesRoutes);
 app.use("/api", contactsRoutes);
 app.use("/api", incidentsRoutes);
 app.use("/api", calendarRoutes);
+app.use("/api", templatesRoutes);
 
 // UptimeRobot Endpoint
 app.post("/api/uptimerobot", async (req, res) => {
