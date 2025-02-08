@@ -2,9 +2,32 @@ const mysql = require("mysql2/promise");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
 const db = require("../config/database");
+
+const takeScreenshot = async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ message: "URL is required." });
+
+  const fileName = `screenshot-${Date.now()}.png`;
+  const filePath = path.join(__dirname, "../../uploads/screenshots", fileName);
+
+  try {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: "networkidle2" });
+    await page.setViewport({ width: 1920, height: 1080 });
+    await page.screenshot({ path: filePath, fullPage: true });
+    await browser.close();
+
+    res.json({ imageUrl: `/screenshots/${fileName}` });
+  } catch (error) {
+    console.error("Screenshot error:", error);
+    res.status(500).json({ message: "Error capturing screenshot." });
+  }
+};
 
 // Fetch all websites
 const getWebsites = async (req, res) => {
@@ -174,6 +197,7 @@ const deleteWebsite = async (req, res) => {
 };
 
 module.exports = {
+  takeScreenshot,
   getWebsites,
   getWebsiteById,
   createWebsite,
