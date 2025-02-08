@@ -220,6 +220,78 @@ const createIncident = async (req, res) => {
   }
 };
 
+// Update incident
+const updateIncident = async (req, res) => {
+  const { id } = req.params;
+  const {
+    title,
+    description,
+    note,
+    website_id,
+    status,
+    incident_start,
+    incident_end,
+  } = req.body;
+
+  let statusCode;
+  if (status === "OPEN" || status === 1) {
+    statusCode = 1;
+  } else if (status === "IN PROGRESS" || status === 2) {
+    statusCode = 2;
+  } else if (status === "RESOLVED" || status === 3) {
+    statusCode = 3;
+  } else {
+    statusCode = 4;
+  }
+
+  if (!id) {
+    return res.status(400).json({ message: "Incident ID is required." });
+  }
+
+  if (!website_id || !title) {
+    return res
+      .status(400)
+      .json({ message: "Title and website ID are required." });
+  }
+
+  const formattedStartTime = formatDate(incident_start);
+  const formattedEndTime = formatDate(incident_end);
+
+  try {
+    const [result] = await db.query(
+      `UPDATE incidents 
+        SET title = ?, 
+            description = ?, 
+            note = ?, 
+            website_id = ?, 
+            status = ?, 
+            incident_start = ?, 
+            incident_end = ?,
+            updated_at = NOW() 
+        WHERE incident_key = ?`,
+      [
+        title,
+        description,
+        note,
+        website_id,
+        statusCode,
+        formattedStartTime,
+        formattedEndTime,
+        id,
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Incident not found." });
+    }
+
+    res.status(200).json({ message: "Incident updated successfully." });
+  } catch (error) {
+    console.error("Error updating incident:", error);
+    return res.status(500).json({ message: "Error updating incident." });
+  }
+};
+
 // Update incident status
 const updateIncidentStatus = async (req, res) => {
   const { id } = req.params;
@@ -250,5 +322,6 @@ module.exports = {
   getIncidentById,
   getMessages,
   createIncident,
+  updateIncident,
   updateIncidentStatus,
 };
