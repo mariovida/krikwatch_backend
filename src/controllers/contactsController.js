@@ -129,10 +129,16 @@ const sendEmail = async (req, res) => {
       },
     });
 
+    const replyToEmails = process.env.EMAIL_REPLY_TO
+      ? process.env.EMAIL_REPLY_TO.includes(",")
+        ? process.env.EMAIL_REPLY_TO.split(",")
+        : process.env.EMAIL_REPLY_TO
+      : undefined;
+
     const mailOptions = {
       from: `"Krikstudio" <${krikemDefaultMail}>`,
       to: email,
-      //replyTo: "mario@krikstudio.com",
+      ...(replyToEmails && { replyTo: replyToEmails }),
       subject: "Obavijest o nedostupnosti web usluge",
       text: message,
       html: `<p>${message.replace(/\n/g, "<br>")}</p>`,
