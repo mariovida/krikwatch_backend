@@ -49,7 +49,31 @@ const createTemplate = async (req, res) => {
   }
 };
 
+// Delete template
+const deleteTemplate = async (req, res) => {
+  const templateId = req.params.id;
+
+  try {
+    const [template] = await db.query(
+      "SELECT * FROM message_templates WHERE id = ?",
+      [templateId]
+    );
+
+    if (template.length === 0) {
+      return res.status(404).json({ message: `Template not found` });
+    }
+
+    await db.query("DELETE FROM message_templates WHERE id = ?", [templateId]);
+
+    return res.status(200).json({ message: "Template deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting template:", error);
+    return res.status(500).json({ message: "Error deleting template" });
+  }
+};
+
 module.exports = {
   getTemplates,
   createTemplate,
+  deleteTemplate,
 };
