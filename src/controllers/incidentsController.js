@@ -317,6 +317,28 @@ const updateIncidentStatus = async (req, res) => {
   }
 };
 
+// Delete incident
+const deleteIncident = async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const [incident] = await db.query("SELECT * FROM incidents WHERE id = ?", [
+      id,
+    ]);
+
+    if (incident.length === 0) {
+      return res.status(404).json({ message: `Incident not found` });
+    }
+
+    await db.query("DELETE FROM incidents WHERE id = ?", [id]);
+
+    return res.status(200).json({ message: "Incident deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting incident:", error);
+    return res.status(500).json({ message: "Error deleting incident" });
+  }
+};
+
 module.exports = {
   getIncidents,
   getIncidentById,
@@ -324,4 +346,5 @@ module.exports = {
   createIncident,
   updateIncident,
   updateIncidentStatus,
+  deleteIncident,
 };
