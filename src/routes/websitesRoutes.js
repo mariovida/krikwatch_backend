@@ -1,5 +1,7 @@
 const express = require("express");
 const {
+  upload,
+  uploadWebsiteFavicon,
   takeScreenshot,
   getWebsites,
   getWebsiteById,
@@ -11,6 +13,12 @@ const { authMiddleware } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+router.post(
+  "/websites/upload-favicon",
+  authMiddleware,
+  upload.single("favicon"),
+  uploadWebsiteFavicon
+);
 router.get("/websites/screenshot", takeScreenshot);
 router.get("/websites", authMiddleware, getWebsites);
 router.get("/websites/:id", authMiddleware, getWebsiteById);
