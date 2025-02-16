@@ -3,9 +3,39 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const puppeteer = require("puppeteer");
+const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const db = require("../config/database");
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads");
+  },
+  filename: function (req, file, cb) {
+    const uniqueName =
+      "favicon-" + Date.now() + path.extname(file.originalname);
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+const uploadWebsiteFavicon = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const fileName = req.file.filename;
+    const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${fileName}`;
+
+    return res.status(200).json({ fileName, fileUrl });
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    res.status(500).json({ error: "File upload failed" });
+  }
+};
 
 const takeScreenshot = async (req, res) => {
   const { url } = req.query;
@@ -44,6 +74,22 @@ const getWebsites = async (req, res) => {
 
     if (websites.length === 0) {
       return res.status(404).json({ message: "No websites found" });
+    }
+
+    for (let website of websites) {
+      let faviconData = null;
+      if (website.favicon) {
+        const imagePath = path.join(
+          __dirname,
+          "../../uploads",
+          website.favicon
+        );
+
+        if (fs.existsSync(imagePath)) {
+          faviconData = fs.readFileSync(imagePath);
+          website.favicon = faviconData.toString("base64");
+        }
+      }
     }
 
     return res.json({ websites });
@@ -87,7 +133,24 @@ const getWebsiteById = async (req, res) => {
       created_by: `${incident.created_by_first_name} ${incident.created_by_last_name}`,
     }));
 
-    return res.json({ website: website[0], incidents: formattedIncidents });
+    let faviconData = null;
+    if (website[0].favicon) {
+      const imagePath = path.join(
+        __dirname,
+        "../../uploads",
+        website[0].favicon
+      );
+
+      if (fs.existsSync(imagePath)) {
+        faviconData = fs.readFileSync(imagePath);
+        website.favicon = faviconData.toString("base64");
+      }
+    }
+
+    return res.json({
+      website: { ...website[0], favicon: website.favicon },
+      incidents: formattedIncidents,
+    });
   } catch (error) {
     console.error("Error fetching website and incidents:", error);
     return res
@@ -98,8 +161,15 @@ const getWebsiteById = async (req, res) => {
 
 // Create new website
 const createWebsite = async (req, res) => {
-  const { name, url, client_id, uptime_id, hosting_url, hosting_info } =
-    req.body;
+  const {
+    name,
+    url,
+    client_id,
+    uptime_id,
+    hosting_url,
+    hosting_info,
+    favicon,
+  } = req.body;
 
   if (!name) {
     return res.status(400).json({ message: "Name field is required." });
@@ -119,9 +189,9 @@ const createWebsite = async (req, res) => {
 
     const [result] = await db.query(
       `INSERT INTO websites 
-      (name, status, client_id, created_at, website_url, uptime_id, hosting_url, hosting_info) 
-      VALUES (?, 1, ?, NOW(), ?, ?, ?, ?)`,
-      [name, client_id, url, uptime_id, hosting_url, hosting_info]
+      (name, status, client_id, created_at, website_url, uptime_id, hosting_url, hosting_info, favicon) 
+      VALUES (?, 1, ?, NOW(), ?, ?, ?, ?, ?)`,
+      [name, client_id, url, uptime_id, hosting_url, hosting_info, favicon]
     );
 
     res.status(201).json({
@@ -136,8 +206,16 @@ const createWebsite = async (req, res) => {
 
 const updateWebsite = async (req, res) => {
   const websiteId = req.params.id;
-  const { name, website_url, client_id, uptime_id, hosting_url, hosting_info } =
-    req.body;
+  const {
+    name,
+    website_url,
+    client_id,
+    uptime_id,
+    hosting_url,
+    hosting_info,
+    favicon_changed,
+    favicon,
+  } = req.body;
 
   if (!name || !client_id) {
     return res
@@ -154,18 +232,42 @@ const updateWebsite = async (req, res) => {
       return res.status(404).json({ message: `Website not found` });
     }
 
-    await db.query(
-      "UPDATE websites SET name = ?, client_id = ?, website_url = ?, uptime_id = ?, hosting_url = ?, hosting_info = ? WHERE id = ?",
-      [
-        name,
-        client_id,
-        website_url,
-        uptime_id,
-        hosting_url,
-        hosting_info,
-        websiteId,
-      ]
-    );
+    let newFavicon = website[0].favicon;
+    if (favicon_changed) {
+      newFavicon = favicon;
+    }
+
+    let updateQuery;
+    if (favicon_changed) {
+      updateQuery =
+        "UPDATE websites SET name = ?, client_id = ?, website_url = ?, uptime_id = ?, hosting_url = ?, hosting_info = ?, favicon = ? WHERE id = ?";
+    } else {
+      updateQuery =
+        "UPDATE websites SET name = ?, client_id = ?, website_url = ?, uptime_id = ?, hosting_url = ?, hosting_info = ? WHERE id = ?";
+    }
+
+    const updateParams = favicon_changed
+      ? [
+          name,
+          client_id,
+          website_url,
+          uptime_id,
+          hosting_url,
+          hosting_info,
+          newFavicon,
+          websiteId,
+        ]
+      : [
+          name,
+          client_id,
+          website_url,
+          uptime_id,
+          hosting_url,
+          hosting_info,
+          websiteId,
+        ];
+
+    await db.query(updateQuery, updateParams);
 
     return res.json({ message: "Website updated successfully" });
   } catch (error) {
@@ -197,6 +299,8 @@ const deleteWebsite = async (req, res) => {
 };
 
 module.exports = {
+  upload,
+  uploadWebsiteFavicon,
   takeScreenshot,
   getWebsites,
   getWebsiteById,
