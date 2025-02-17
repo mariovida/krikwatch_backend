@@ -49,6 +49,40 @@ const createTemplate = async (req, res) => {
   }
 };
 
+// Update existing template
+const updateTemplate = async (req, res) => {
+  const { id } = req.params;
+  const { title, content } = req.body;
+
+  if (!title || !content) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    const [existingTemplate] = await db.query(
+      `SELECT * FROM message_templates WHERE id = ?`,
+      [id]
+    );
+
+    if (existingTemplate.length === 0) {
+      return res.status(404).json({ message: "Template not found." });
+    }
+
+    await db.query(
+      `UPDATE message_templates SET title = ?, content = ? WHERE id = ?`,
+      [title, content, id]
+    );
+
+    res.status(200).json({
+      message: "Template updated successfully.",
+      templateId: id,
+    });
+  } catch (error) {
+    console.error("Error updating template:", error);
+    return res.status(500).json({ message: "Error updating template." });
+  }
+};
+
 // Delete template
 const deleteTemplate = async (req, res) => {
   const templateId = req.params.id;
@@ -75,5 +109,6 @@ const deleteTemplate = async (req, res) => {
 module.exports = {
   getTemplates,
   createTemplate,
+  updateTemplate,
   deleteTemplate,
 };
