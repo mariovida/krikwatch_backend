@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const path = require("path");
 var https = require("follow-redirects").https;
 
 const authRoutes = require("./src/routes/authRoutes");
@@ -134,7 +135,8 @@ app.post("/api/send-sms", async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Server is running");
+  //res.send("Server is running");
+  res.sendFile(path.join(__dirname, "./public", "index.html"));
 });
 
 app.use((err, req, res, next) => {
