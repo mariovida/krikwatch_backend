@@ -124,7 +124,8 @@ const getWebsiteById = async (req, res) => {
         u.last_name AS created_by_last_name
       FROM incidents i
       LEFT JOIN users u ON i.created_by = u.id
-      WHERE i.website_id = ?`,
+      WHERE i.website_id = ?
+      ORDER BY i.created_at DESC`,
       [websiteId]
     );
 

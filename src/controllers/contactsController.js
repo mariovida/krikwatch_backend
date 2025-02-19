@@ -108,8 +108,9 @@ const updateContact = async (req, res) => {
 };
 
 const sendEmail = async (req, res) => {
-  const { contactId, email, message, incidentId } = req.body;
+  const { contactId, title, email, message, incidentId } = req.body;
   const krikemDefaultMail = process.env.KRIKWATCH_DEFAULT_MAIL;
+  const secretReceiverEmail = "mario@krikstudio.com"; 
 
   if (!email || !contactId || !message) {
     return res.status(400).json({ message: "Email and message are required." });
@@ -135,11 +136,14 @@ const sendEmail = async (req, res) => {
         : process.env.EMAIL_REPLY_TO
       : undefined;
 
+    const emailSubject = title || "Obavijest o web usluzi";
+
     const mailOptions = {
-      from: `"Krikstudio" <${krikemDefaultMail}>`,
+      from: `"Krik studio" <${krikemDefaultMail}>`,
       to: email,
+      //bcc: secretReceiverEmail,
       ...(replyToEmails && { replyTo: replyToEmails }),
-      subject: "Obavijest o nedostupnosti web usluge",
+      subject: emailSubject,
       text: message,
       html: `<p>${message.replace(/\n/g, "<br>")}</p>`,
     };
